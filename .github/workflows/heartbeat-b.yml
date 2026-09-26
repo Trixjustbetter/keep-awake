@@ -1,0 +1,25 @@
+name: Heartbeat B
+
+# Second half of the mutual ping chain — see heartbeat-a.yml.
+on:
+  workflow_run:
+    workflows: [Heartbeat A]
+    types: [completed]
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Wake Render
+        run: |
+          for i in 1 2 3; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 120 \
+              'https://nuvio-moviebox.onrender.com/manifest.json' || echo 000)
+            echo "attempt $i -> $code"
+            if [ "$code" = "200" ]; then exit 0; fi
+            sleep 30
+          done
+          exit 1
+      - name: Wait before handing off to Heartbeat A
+        run: sleep 240
