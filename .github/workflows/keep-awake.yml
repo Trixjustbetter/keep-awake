@@ -1,9 +1,18 @@
 name: Keep Render awake
 
+# Three trigger layers, in order of reliability:
+#  - workflow_run: this workflow re-triggers itself ~4.5 min after each run
+#    completes (the sleep below), giving a steady heartbeat independent of
+#    the Actions cron scheduler (which has been lagging hours on this account).
+#  - schedule: bonus pings if/when GitHub's cron scheduler behaves.
+#  - workflow_dispatch: manual tests.
 on:
   schedule:
     - cron: '3,8,13,18,23,28,33,38,43,48,53,58 * * * *'
   workflow_dispatch:
+  workflow_run:
+    workflows: [Keep Render awake]
+    types: [completed]
 
 jobs:
   ping:
@@ -20,3 +29,5 @@ jobs:
             sleep 30
           done
           exit 1
+      - name: Wait before next cycle
+        run: sleep 240
